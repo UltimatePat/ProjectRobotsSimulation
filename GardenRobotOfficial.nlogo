@@ -1,14 +1,109 @@
-
+globals [file visited message]
+breed [robots robot]
 
 to setup
   clear-all
+  setup-environment
+  setup-robot
+  setup-file
+  set visited []  ;; Initialize the list of visited patches
+  reset-ticks ; Reset the ticks counter
+  let welcome "Start of Operation"
   file-open "GardenRobot.txt"
-  file-print "Hello I printed"
+  file-print welcome
   file-close
 end
 
 to go
+  move-robot
+  output-show visited
   tick
+end
+
+to setup-file
+  carefully [ file-delete "GardenRobot.txt" ] [ ]
+end
+
+to setup-environment
+  ask patches [
+    set pcolor green
+  ]
+  ask n-of 80 patches [set pcolor black]
+  ask n-of 30 patches [set pcolor red]
+  ask n-of 10 patches [set pcolor violet]
+  ask patch -16 16 [set pcolor white]
+end
+
+to setup-robot
+  create-robots 1 [
+    set color blue
+    set shape "car"
+    set size 1
+    setxy -16 16  ;; the robot starts at a random point
+    set heading 90
+  ]
+end
+
+to move-robot
+  ask robots [
+    ; Check if the patch the robot is going to step on is not black
+    let candidate-patches patches in-radius 1 with [pcolor != black]
+    let random-patch one-of candidate-patches
+
+    (ifelse
+    random-patch != nobody [
+      ; Move to the randomly selected non-black patch
+      face random-patch
+      fd 1
+      let healthy-patches patches with [pcolor = red] in-radius 1
+      let unseen-patches healthy-patches with [not member? self visited]
+      if any? unseen-patches [
+        let selected-patch one-of unseen-patches
+        set visited fput selected-patch visited  ;; Save the purple patch to seen patches
+        set message word "Healthy plant at " selected-patch
+        print-notification
+      ]
+      let unhealthy-patches patches with [pcolor = violet] in-radius 1
+      let unseen-patches2 unhealthy-patches with [not member? self visited]
+      if any? unseen-patches2 [
+        let selected-patch one-of unseen-patches2
+        set visited fput selected-patch visited  ;; Save the purple patch to seen patches
+        set message word "Unhealthy plant at " selected-patch
+        print-notification
+      ]
+    ] [
+      ; If there are no non-black patches nearby, rotate randomly
+      rt random 360
+    ])
+  ]
+end
+
+
+
+   ; (ifelse
+   ; heading = 90 and [pcolor] of patch-ahead 1 != black [
+    ;  forward 1
+    ;]
+    ;heading = 90 and [pcolor] of patch-ahead 1 = black [
+     ; set heading 180
+     ; forward 1
+    ;]
+     ; heading = 180 and [pcolor] of patch-left-and-ahead 90 1 != black [
+     ; set heading 90
+     ; forward 1
+   ; ]
+     ; heading = 180 and [pcolor] of patch-left-and-ahead 90 1 != black [
+     ; forward 1
+    ;]
+    ; elsecommands
+   ; [
+      ;output-show "else"
+  ;])
+
+to print-notification
+  file-open "GardenRobot.txt"
+  file-print message
+  file-close
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
