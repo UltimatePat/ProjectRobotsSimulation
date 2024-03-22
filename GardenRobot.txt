@@ -1,1 +1,8 @@
 Start of Operation
+Healthy plant at (patch -15 15)
+Robot position is (-16, 16)
+Robot position is (-15, 16)
+Robot position is (-15, 15)
+Robot position is (-16, 15)
+Robot position is (-16, 14)
+Robot position is (-16, 13)

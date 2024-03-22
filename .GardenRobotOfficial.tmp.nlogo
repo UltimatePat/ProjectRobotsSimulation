@@ -16,6 +16,7 @@ end
 
 to go
   move-robot
+
   print-robot-location
   output-show visited
   tick
