@@ -1,10 +1,13 @@
 globals [file visited message robotLocation]
 breed [robots robot]
+breed [uplants uplant]
+breed [hplants hplant]
 
 to setup
   clear-all
   setup-environment
   setup-robot
+  setup-plants
   setup-file
   set visited []  ;; Initialize the list of visited patches
   reset-ticks ; Reset the ticks counter
@@ -16,7 +19,6 @@ end
 
 to go
   move-robot
-
   print-robot-location
   output-show visited
   tick
@@ -31,7 +33,7 @@ to setup-environment
     set pcolor green
   ]
   ask n-of 80 patches [set pcolor black]
-  ask n-of 30 patches [set pcolor red]
+  ask n-of 30 patches [set pcolor re]
   ask n-of 10 patches [set pcolor violet]
   ask patch -16 16 [set pcolor white]
 end
@@ -41,8 +43,31 @@ to setup-robot
     set color blue
     set shape "car"
     set size 1
-    setxy -16 16  ;; the robot starts at a random point
+    setxy -16 16
     set heading 90
+  ]
+end
+
+to hplants-setup
+  set breed hplants
+  set color violet
+  set shape "flower"
+  set size 1
+end
+
+to uplants-setup
+  set breed uplants
+  set color pink
+  set shape "plant"
+  set size 1
+end
+
+to setup-plants
+  ask n-of count patches with [pcolor = red] patches with [pcolor = red] [
+    sprout 1 [hplants-setup]
+  ]
+  ask n-of count patches with [pcolor = violet] patches with [pcolor = violet] [
+    sprout 1 [uplants-setup]
   ]
 end
 
