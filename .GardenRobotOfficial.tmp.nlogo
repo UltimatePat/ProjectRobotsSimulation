@@ -1,7 +1,9 @@
-globals [file visited message robotLocation]
+globals [file message robotLocation targetPatch targetTurtle candidatePatches visitedPatches]
 breed [robots robot]
 breed [uplants uplant]
 breed [hplants hplant]
+breed [tiles tile]
+extensions[nw]
 
 to setup
   clear-all
@@ -9,7 +11,7 @@ to setup
   setup-robot
   setup-plants
   setup-file
-  set visited []  ;; Initialize the list of visited patches
+  set visitedPatches []  ;; Initialize the list of visited patches
   reset-ticks ; Reset the ticks counter
   let welcome "Start of Operation"
   file-open "GardenRobot.txt"
@@ -20,7 +22,7 @@ end
 to go
   move-robot
   print-robot-location
-  output-show visited
+  ;output-show visitedPatches
   tick
 end
 
@@ -33,9 +35,29 @@ to setup-environment
     set pcolor green
   ]
   ask n-of 80 patches [set pcolor black]
-  ask n-of 30 patches [set pcolor re]
+  ask n-of 30 patches [set pcolor blue]
   ask n-of 10 patches [set pcolor violet]
   ask patch -16 16 [set pcolor white]
+
+  ask patches [
+    if pcolor != black [
+      sprout-tiles 1
+    ]
+  ]
+  set candidatePatches patches with [pcolor != black]
+  set targetPatch one-of candidatePatches
+
+  ask tiles [
+    ht
+    create-links-with other tiles in-radius 1 ;; weight the link between tile agents using the number of enemies and friends in radius
+    if (distancexy [pxcor] of targetPatch [pycor] of targetPatch) = 0 [ ;; define which tile agent is on goal patch
+      set targetTurtle self
+    ]
+  ]
+
+  ask links [
+    hide-link ;; hide links so they don't visually obstruct the program
+  ]
 end
 
 to setup-robot
@@ -57,55 +79,65 @@ end
 
 to uplants-setup
   set breed uplants
-  set color pink
+  set color red
   set shape "plant"
   set size 1
 end
 
 to setup-plants
-  ask n-of count patches with [pcolor = red] patches with [pcolor = red] [
+  ask n-of count patches with [pcolor = blue] patches with [pcolor = blue] [
     sprout 1 [hplants-setup]
   ]
   ask n-of count patches with [pcolor = violet] patches with [pcolor = violet] [
     sprout 1 [uplants-setup]
   ]
 end
+to update-target
+  ask tiles [
+    ht
+    create-links-with other tiles in-radius 1 ;; weight the link between tile agents using the number of enemies and friends in radius
+    if (distancexy [pxcor] of targetPatch [pycor] of targetPatch) = 0 [ ;; define which tile agent is on goal patch
+      set targetTurtle self
+    ]
+  ]
+end
 
 to move-robot
   ask robots [
     ; Check if the patch the robot is going to step on is not black
-    let candidate-patches patches in-radius 1 with [pcolor != black]
-    let random-patch one-of candidate-patches
     let xcorRobot [xcor] of turtle 0
     let ycorRobot [ycor] of turtle 0
     set robotLocation (word "Robot position is (" xcorRobot ", "  ycorRobot ")")
 
+    create-links-with other tiles in-radius 1 ;; robot makes sure he has link with neighboring tiles which represent patches
+    ask links [
+      hide-link
+    ]
+    ; Add target patch to visitedPatches
+    if (xcorRobot = [pxcor] of targetPatch and ycorRobot = [pycor] of targetPatch) [
+      set visitedPatches lput targetPatch visitedPatches
+      output-show visitedPatches
+    ]
+
     (ifelse
-    random-patch != nobody [
-      ; Move to the randomly selected non-black patch
-      face random-patch
-      fd 1
-      let healthy-patches patches with [pcolor = red] in-radius 1
-      let unseen-patches healthy-patches with [not member? self visited]
-      if any? unseen-patches [
-        let selected-patch one-of unseen-patches
-        set visited fput selected-patch visited  ;; Save the purple patch to seen patches
-        set message word "Healthy plant at " selected-patch
-        print-notification
-      ]
-      let unhealthy-patches patches with [pcolor = violet] in-radius 1
-      let unseen-patches2 unhealthy-patches with [not member? self visited]
-      if any? unseen-patches2 [
-        let selected-patch one-of unseen-patches2
-        set visited fput selected-patch visited  ;; Save the purple patch to seen patches
-        set message word "Unhealthy plant at " selected-patch
-        print-notification
-      ]
-    ] [
-      ; If there are no non-black patches nearby, rotate randomly
-      rt random 360
-    ])
+      member? targetPatch visitedPatches [
+        ; remove target patch from candidate patches
+
+        set targetPatch one-of candidatePatches with [not member? self visitedPatches]
+        update-target
+        let path nw:turtles-on-path-to targetTurtle
+        move-to item 1 path
+       output-show 1
+      ] [
+        let path nw:turtles-on-path-to targetTurtle
+        move-to item 1 path
+        output-show 2
+      ])
+
+    ask my-links [die] ;; remove any links the robot created with tiles in this iteration
+
   ]
+
 end
 
 
