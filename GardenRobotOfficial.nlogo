@@ -1,4 +1,4 @@
-globals [file message robotLocation targetPatch targetTurtle candidatePatches visitedPatches]
+globals [file message robotLocation mapPatch targetPatch targetTurtle candidatePatches visitedPatches visitedPlants batteryPercentage batteryPercentPrint]
 breed [robots robot]
 breed [uplants uplant]
 breed [hplants hplant]
@@ -11,7 +11,10 @@ to setup
   setup-robot
   setup-plants
   setup-file
+  setup-map
+  set batteryPercentage 10000
   set visitedPatches []  ;; Initialize the list of visited patches
+  set visitedPlants []  ;; Initialize the list of visited patches
   reset-ticks ; Reset the ticks counter
   let welcome "Start of Operation"
   file-open "GardenRobot.txt"
@@ -22,8 +25,18 @@ end
 to go
   move-robot
   print-robot-location
-  ;output-show visitedPatches
   tick
+end
+
+to setup-map
+  let welcome "Patch Colors"
+  file-open "GardenRobot.txt"
+  file-print welcome
+  file-close
+  ask patches [
+    set mapPatch (word pxcor ", " pycor ", " pcolor)
+    print-map
+  ]
 end
 
 to setup-file
@@ -105,33 +118,49 @@ end
 to move-robot
   ask robots [
     ; Check if the patch the robot is going to step on is not black
-    let xcorRobot [xcor] of turtle 0
-    let ycorRobot [ycor] of turtle 0
-    set robotLocation (word "Robot position is (" xcorRobot ", "  ycorRobot ")")
+    let xcorRobot [xcor] of robots
+    let ycorRobot [ycor] of robots
+    set robotLocation (word "Robot position is (" (item 0 xcorRobot) ", "  (item 0 ycorRobot) ")")
+    set batteryPercentage (batteryPercentage - 1)
+    set batteryPercentPrint round((batteryPercentage / 10000)*(100))
+    print-battery
 
     create-links-with other tiles in-radius 1 ;; robot makes sure he has link with neighboring tiles which represent patches
     ask links [
       hide-link
     ]
+    let healthy-patches patches with [pcolor = blue] in-radius 1
+    let unseen-patches healthy-patches with [not member? self visitedPlants]
+      if any? unseen-patches [
+        let selected-patch one-of unseen-patches
+        set visitedPlants fput selected-patch visitedPlants  ;; Save the purple patch to seen patches
+        set message (word "Healthy plant at (" [pxcor] of selected-patch ", " [pycor] of selected-patch ")")
+        print-notification
+      ]
+      let unhealthy-patches patches with [pcolor = violet] in-radius 1
+      let unseen-patches2 unhealthy-patches with [not member? self visitedPlants]
+      if any? unseen-patches2 [
+        let selected-patch one-of unseen-patches2
+        set visitedPlants fput selected-patch visitedPlants  ;; Save the purple patch to seen patches
+        set message (word "Unhealthy plant at (" [pxcor] of selected-patch ", " [pycor] of selected-patch ")")
+        print-notification
+      ]
+
     ; Add target patch to visitedPatches
-    if (xcorRobot = [pxcor] of targetPatch and ycorRobot = [pycor] of targetPatch) [
+    if ((item 0 xcorRobot) = [pxcor] of targetPatch and (item 0 ycorRobot) = [pycor] of targetPatch) [
       set visitedPatches lput targetPatch visitedPatches
-      output-show visitedPatches
     ]
 
     (ifelse
       member? targetPatch visitedPatches [
-        ; remove target patch from candidate patches
+        set candidatePatches candidatePatches with [[targetPatch] of myself != self]
         set targetPatch one-of candidatePatches with [not member? self visitedPatches]
         update-target
         let path nw:turtles-on-path-to targetTurtle
         move-to item 1 path
-       output-show 1
       ] [
         let path nw:turtles-on-path-to targetTurtle
         move-to item 1 path
-        output-show 2
-        output-show targetPatch
       ])
 
     ask my-links [die] ;; remove any links the robot created with tiles in this iteration
@@ -139,28 +168,6 @@ to move-robot
   ]
 
 end
-
-
-
-   ; (ifelse
-   ; heading = 90 and [pcolor] of patch-ahead 1 != black [
-    ;  forward 1
-    ;]
-    ;heading = 90 and [pcolor] of patch-ahead 1 = black [
-     ; set heading 180
-     ; forward 1
-    ;]
-     ; heading = 180 and [pcolor] of patch-left-and-ahead 90 1 != black [
-     ; set heading 90
-     ; forward 1
-   ; ]
-     ; heading = 180 and [pcolor] of patch-left-and-ahead 90 1 != black [
-     ; forward 1
-    ;]
-    ; elsecommands
-   ; [
-      ;output-show "else"
-  ;])
 
 to print-notification
   file-open "GardenRobot.txt"
@@ -172,6 +179,18 @@ to print-robot-location
   file-open "GardenRobot.txt"
   file-print robotLocation
   file-close
+end
+
+to print-map
+ file-open "GardenRobot.txt"
+ file-print mapPatch
+ file-close
+end
+
+to print-battery
+ file-open "GardenRobot.txt"
+ file-print (word "Battery Percentage: " batteryPercentPrint "%")
+ file-close
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -222,7 +241,7 @@ OUTPUT
 625
 25
 865
-80
+323
 10
 
 BUTTON
