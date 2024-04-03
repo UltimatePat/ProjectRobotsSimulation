@@ -120,11 +120,17 @@ to move-robot
     ; Check if the patch the robot is going to step on is not black
     let xcorRobot [xcor] of robots
     let ycorRobot [ycor] of robots
-    ask patches with [pycor = (item 0 ycorRobot) and pxcor = (item 0 xcorRobot)] [set pcolor 54]
+    let currentPatch patch-at (item 0 xcorRobot) (item 0 ycorRobot)
+    ask patches with [pycor = (item 0 ycorRobot) and pxcor = (item 0 xcorRobot)] [
+      set pcolor 54
+      set candidatePatches candidatePatches with [[self] of myself != self]
+      set visitedPatches lput self visitedPatches
+    ]
     set robotLocation (word "Robot position is (" (item 0 xcorRobot) ", "  (item 0 ycorRobot) ")")
     set batteryPercentage (batteryPercentage - 1)
     set batteryPercentPrint round((batteryPercentage / 10000)*(100))
     print-battery
+
 
     create-links-with other tiles in-radius 1 ;; robot makes sure he has link with neighboring tiles which represent patches
     ask links [
@@ -156,6 +162,9 @@ to move-robot
       member? targetPatch visitedPatches [
         set candidatePatches candidatePatches with [[targetPatch] of myself != self]
         set targetPatch one-of candidatePatches with [not member? self visitedPatches]
+        if (targetPatch = NOBODY) [
+          die
+        ]
         update-target
         let path nw:turtles-on-path-to targetTurtle
         move-to item 1 path
