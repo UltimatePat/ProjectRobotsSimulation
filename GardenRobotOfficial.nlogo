@@ -120,6 +120,7 @@ to move-robot
     ; Check if the patch the robot is going to step on is not black
     let xcorRobot [xcor] of robots
     let ycorRobot [ycor] of robots
+    ask patches with [pycor = (item 0 ycorRobot) and pxcor = (item 0 xcorRobot)] [set pcolor 54]
     set robotLocation (word "Robot position is (" (item 0 xcorRobot) ", "  (item 0 ycorRobot) ")")
     set batteryPercentage (batteryPercentage - 1)
     set batteryPercentPrint round((batteryPercentage / 10000)*(100))
