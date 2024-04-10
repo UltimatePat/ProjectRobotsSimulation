@@ -47,9 +47,9 @@ to setup-environment
   ask patches [
     set pcolor green
   ]
-  ask n-of 80 patches [set pcolor black]
-  ask n-of 30 patches [set pcolor blue]
-  ask n-of 10 patches [set pcolor violet]
+  ask n-of ObstacleNumber patches [set pcolor black]
+  ask n-of HealthyPlantNumber patches [set pcolor blue]
+  ask n-of UnhealthyPlantNumber patches [set pcolor violet]
   ask patch -16 16 [set pcolor white]
 
   ask patches [
@@ -247,13 +247,6 @@ NIL
 NIL
 1
 
-OUTPUT
-625
-25
-865
-323
-10
-
 BUTTON
 117
 40
@@ -270,6 +263,51 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+20
+95
+192
+128
+ObstacleNumber
+ObstacleNumber
+30
+100
+80.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+19
+138
+191
+171
+HealthyPlantNumber
+HealthyPlantNumber
+10
+50
+30.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+19
+181
+191
+214
+UnhealthyPlantNumber
+UnhealthyPlantNumber
+0
+30
+10.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
